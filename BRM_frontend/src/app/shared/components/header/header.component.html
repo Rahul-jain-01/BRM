@@ -1,0 +1,22 @@
+<nav class="flex justify-between items-center bg-gray-800 text-white p-4">
+    <div class="text-xl font-bold"> BRM</div>
+  
+    <div class="space-x-4">
+      <button *ngIf="!isLoggedIn()" (click)="navigateToAuth()">
+        {{ isOnRegisterPage ? 'Login' : 'Register' }}
+      </button>
+  
+      <ng-container *ngIf="isLoggedIn() as loggedIn">
+        <ng-container *ngIf="loggedIn; else loggedOut">
+          <a routerLink="/referrals" class="hover:underline">Referrals</a>
+          <a routerLink="/dashboard" class="hover:underline">Dashboard</a>
+          <button (click)="logout()">Logout</button>
+        </ng-container>
+      </ng-container>
+  
+      <ng-template #loggedOut>
+        <a routerLink="/login" class="hover:underline">Login</a>
+      </ng-template>
+    </div>
+  </nav>
+  

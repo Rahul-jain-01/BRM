@@ -1,0 +1,6 @@
+@ChainMarketing.API_HostAddress = http://localhost:5013
+
+GET {{ChainMarketing.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

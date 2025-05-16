@@ -1,0 +1,57 @@
+<div *ngIf="!isPaid" class="flex items-center justify-center min-h-screen bg-white">
+  <div class="text-center p-6 bg-white rounded-xl shadow-xl border">
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Approval Pending</h2>
+    <p class="text-gray-600">Your account is awaiting admin approval. Please check back later.</p>
+  </div>
+</div>
+
+<div *ngIf="isPaid">
+
+  <div *ngIf="referralTree" class="p-4">
+    <h2 class="text-2xl font-bold mb-6 text-center">Referral Tree</h2>
+    
+    <!-- Root User -->
+    <div class="flex justify-center mb-4">
+      <div class="bg-blue-500 text-white p-4 rounded-xl shadow-md">
+        User ID: {{ referralTree.userId }}
+      </div>
+    </div>
+    
+    <!-- Level 1 -->
+    <div class="flex justify-center space-x-6 mb-6">
+      <ng-container *ngFor="let user of referralTree?.level1">
+        <div class="bg-green-500 text-white p-4 rounded-xl shadow-md text-center">
+          <div>Level 1: {{ user.id }}</div>
+          <div class="text-sm text-white/80">
+            Co-Applicant: {{ user.hasCoApplicant ? 'Yes' : 'No' }}
+          </div>
+        </div>
+      </ng-container>
+    </div>
+    
+    <!-- Level 2 -->
+    <div class="flex justify-center space-x-6 mb-6">
+      <ng-container *ngFor="let user of referralTree?.level2">
+        <div class="bg-yellow-500 text-white p-4 rounded-xl shadow-md text-center">
+          <div>Level 2: {{ user.id }}</div>
+          <div class="text-sm text-white/80">
+            Co-Applicant: {{ user.hasCoApplicant ? 'Yes' : 'No' }}
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  
+    <!-- Level 3 -->
+    <div class="flex justify-center space-x-6">
+      <ng-container *ngFor="let user of referralTree?.level3">
+        <div class="bg-red-500 text-white p-4 rounded-xl shadow-md text-center">
+          <div>Level 3: {{ user.id }}</div>
+          <div class="text-sm text-white/80">
+            Co-Applicant: {{ user.hasCoApplicant ? 'Yes' : 'No' }}
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+  
+</div>
