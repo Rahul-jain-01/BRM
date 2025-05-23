@@ -56,15 +56,20 @@ namespace ChainMarketing.Application.Services
             {
                 throw new Exception("User already exists");
             }
+
+            // 1. Create and hash password
             var user = new User
             {
+                
                 Email = request.Email,
                 ReferralCode = GenerateReferralCode(),
-                Role=UserRole.Admin,
+                Role=UserRole.User,
             };
 
             user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
+
+            // 2. Check referral code
             if (!string.IsNullOrEmpty(request.ReferralCode))
             {
                 var referrer = await _userRepository.GetByReferralCodeAsync(request.ReferralCode);
@@ -81,19 +86,24 @@ namespace ChainMarketing.Application.Services
                     var directReferrals = await _userRepository.GetDirectReferralsAsync(referrer.Id);
 
                     // Separate co-applicant from regular referrals
-                    var regularReferrals = directReferrals.Where(u => !u.HasCoApplicant).ToList();
+                    var regularReferrals = directReferrals
+                        .Where(r => r.Id != referrer.CoApplicantId)
+                        .ToList();
 
                     if (regularReferrals.Count >= 6)
                     {
                         throw new Exception("This user has already referred 6 users.");
                     }
 
+                    await _userRepository.AddAsync(user);
+
                     // Auto-assign 3rd referral as co-applicant
                     if (!referrer.HasCoApplicant && regularReferrals.Count == 2)
                     {
                         // This new user will be the 3rd
-                        user.HasCoApplicant = true;
-                        referrer.HasCoApplicant = true;
+                        //user.HasCoApplicant = true;
+                        //referrer.HasCoApplicant = true;
+                        referrer.CoApplicantId = user.Id; // Assign new user as co-applicant of referrer
 
                         await _userRepository.UpdateAsync(referrer);
                     }
@@ -111,7 +121,12 @@ namespace ChainMarketing.Application.Services
                 }
                 
             }
-            await _userRepository.AddAsync(user);
+            else
+            {
+                // No referral code, so just save the user
+                await _userRepository.AddAsync(user);
+            }
+
             // After saving the user, update the referral path
             // Save referral path for up to 3 levels
             if (user.ReferredById.HasValue)
@@ -173,22 +188,6 @@ namespace ChainMarketing.Application.Services
         {
             return Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
         }
-        //private async Task AddReferralPaths(User referrer, User user)
-        //{
-        //    int level = 1;  // Start with the direct referrer
-        //    var currentReferrer = referrer;
-
-        //    // Create paths up to 3 levels
-        //    while (currentReferrer != null && level <= 3)
-        //    {
-        //        // Add a referral path from the current referrer to the new user
-        //        await _referralPathRepository.AddReferralPathAsync(currentReferrer.Id, user.Id, level);
-
-        //        // Move up to the next referrer in the chain
-        //        currentReferrer = currentReferrer.ReferredBy;
-
-        //        level++;
-        //    }
-        //}
+       
     }
 }

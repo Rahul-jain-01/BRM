@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using ChainMarketing.Application.Services;
 using ChainMarketing.Domain.Entities;
+using ChainMarketing.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace ChainMarketing.API.Controllers
     public class ReferralPathController : ControllerBase
     {
         private readonly ReferralPathService _referralPathService;
+        private readonly IUserRepository _userRepository;
 
-        public ReferralPathController(ReferralPathService referralPathService)
+        public ReferralPathController(ReferralPathService referralPathService,IUserRepository userRepository)
         {
             _referralPathService = referralPathService;
+            _userRepository = userRepository;
         }
 
         // Endpoint to add a referral path
@@ -63,12 +66,38 @@ namespace ChainMarketing.API.Controllers
         //    }
         //}
         // GET: api/ReferralPath/all
-        [Authorize(Roles ="Admin,User")]
+        //[Authorize(Roles ="Admin,User")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAllReferralPaths(int id)
         {
             var paths = await _referralPathService.GetReferralTreeFromPathTableAsync(id);
+            // Debug log
+            Console.WriteLine("Tree fetched for user: " + id);
+            Console.WriteLine("Level 1 Count: " + paths.Level1.Count);
+            Console.WriteLine("Level 2 Count: " + paths.Level2.Count);
+            Console.WriteLine("Level 3 Count: " + paths.Level3.Count);
             return Ok(paths);
         }
+
+        [HttpGet("count/{id}")]
+
+        public async Task<int> CountOfLevel1([FromRoute]int id)
+        {
+            return await _referralPathService.GetActualLevel1ReferralCountAsync(id);
+        }
+
+        [HttpPost("assign-coapplicant")]
+        public async Task<IActionResult> AssignCoApplicant([FromBody] CoApplicantRequest request)
+        {
+            await _userRepository.AssignCoApplicantAsync(request.UserId, request.SelectedReferralId);
+            return Ok();
+        }
+
+        public class CoApplicantRequest
+        {
+            public int UserId { get; set; }
+            public int? SelectedReferralId { get; set; }
+        }
+
     }
 }

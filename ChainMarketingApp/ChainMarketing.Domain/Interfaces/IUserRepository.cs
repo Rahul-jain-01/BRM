@@ -16,6 +16,8 @@ namespace ChainMarketing.Domain.Interfaces
         Task UpdateAsync(User user);
         Task<User?> GetByIdAsync(int id);
         Task<List<User>> GetAllUserAync();
+        Task AssignCoApplicantAsync(int userId, int? selectedReferralId = null);
+
 
     }
 }

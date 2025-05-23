@@ -26,6 +26,13 @@ namespace ChainMarketing.Infrastructure.Data
                 .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete
 
 
+            // Co-applicant relationship
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.CoApplicant)
+                .WithMany()
+                .HasForeignKey(u => u.CoApplicantId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete
+
             modelBuilder.Entity<ReferralPath>()
          .HasOne(rp => rp.User)
          .WithMany()

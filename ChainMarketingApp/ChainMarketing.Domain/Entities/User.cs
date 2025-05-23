@@ -23,7 +23,11 @@ namespace ChainMarketing.Domain.Entities
         public User? ReferredBy { get; set; }
         public List<User> DirectReferrals { get; set; } = new();
 
-        public bool HasCoApplicant { get; set; }
+        public bool HasCoApplicant => CoApplicantId.HasValue;
+
+        // ✅ NEW: Co-applicant
+        public int? CoApplicantId { get; set; }
+        public User? CoApplicant { get; set; }
         public bool IsPaid { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

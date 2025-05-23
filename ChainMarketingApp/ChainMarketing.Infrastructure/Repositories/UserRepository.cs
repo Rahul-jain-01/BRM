@@ -58,5 +58,30 @@ namespace ChainMarketing.Infrastructure.Repositories
             await _db.SaveChangesAsync();  // Save changes to DB
         }
 
+        public async Task AssignCoApplicantAsync(int userId, int? selectedReferralId = null)
+        {
+            var user = await _db.Users
+                .Include(u => u.DirectReferrals.OrderBy(r => r.CreatedAt)) // or .OrderBy(r => r.Id)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null || !user.DirectReferrals.Any())
+                return;
+
+            if (selectedReferralId.HasValue)
+            {
+                var allowedReferrals = user.DirectReferrals.Take(2);
+                if (allowedReferrals.Any(r => r.Id == selectedReferralId.Value))
+                {
+                    user.CoApplicantId = selectedReferralId.Value;
+                }
+            }
+            else if (user.CoApplicantId == null && user.DirectReferrals.Count >= 3)
+            {
+                user.CoApplicantId = user.DirectReferrals[2].Id;
+            }
+
+            await _db.SaveChangesAsync();
+        }
+
     }
 }

@@ -29,5 +29,7 @@ namespace ChainMarketing.API.Controllers
             var result = await _authService.LoginAsync(request);
             return Ok(result);
         }
+
+
     }
 }

@@ -1,6 +1,7 @@
 ﻿using ChainMarketing.Application.DTOs;
 using ChainMarketing.Application.Interfaces;
 using ChainMarketing.Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -45,7 +46,7 @@ namespace ChainMarketing.API.Controllers
 
             return NoContent();
         }
-
+        [Authorize(Roles="Admin")]
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers()
         {

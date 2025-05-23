@@ -42,6 +42,20 @@ namespace ChainMarketing.Application.Services
             return await _referralPathRepository.GetReferralPathsAsync(referrerId);
         }
 
+        public async Task<int> GetActualLevel1ReferralCountAsync(int topUserId)
+        {
+            var directReferrals = await _referralPathRepository.GetReferralPathsAsync(topUserId);
+
+            var topUser = await _userRepository.GetByIdAsync(topUserId);
+            var coApplicantId = topUser?.CoApplicantId;
+
+            // Exclude the co-applicant from the count
+            var level1Count = directReferrals.Count(r => r.User.Id != coApplicantId);
+
+            return level1Count;
+        }
+
+
         public async Task<ReferralTreeDto> GetReferralTreeFromPathTableAsync(int userId)
         {
             var user = await _userRepository.GetByIdAsync(userId);
@@ -50,6 +64,7 @@ namespace ChainMarketing.Application.Services
             var tree = new ReferralTreeDto
             {
                 UserId = user.Id,
+                coApplicantId = user.CoApplicantId,
                 Level1 = new List<ReferralUserDto>(),
                 Level2 = new List<ReferralUserDto>(),
                 Level3 = new List<ReferralUserDto>()
@@ -57,53 +72,109 @@ namespace ChainMarketing.Application.Services
 
             var visited = new HashSet<int> { user.Id };
 
-            // Level 1
+            // ----- LEVEL 1 -----
             var level1Paths = await _referralPathRepository.GetReferralPathsAsync(user.Id);
             foreach (var path in level1Paths)
             {
-                if (!visited.Add(path.User.Id)) continue;
+                var referredUser = path.User;
+
+                // Skip if already visited or is the top user's co-applicant
+                if (!visited.Add(referredUser.Id) || referredUser.Id == user.CoApplicantId)
+                    continue;
 
                 tree.Level1.Add(new ReferralUserDto
                 {
-                    Id = path.User.Id,
-                    HasCoApplicant = path.User.HasCoApplicant
+                    Id = referredUser.Id,
+                    HasCoApplicant = referredUser.HasCoApplicant,
+                    IsCoApplicant = false
                 });
+
+                // Add their co-applicant (if any and not visited yet)
+                if (referredUser.CoApplicantId.HasValue && visited.Add(referredUser.CoApplicantId.Value))
+                {
+                    var coApp = await _userRepository.GetByIdAsync(referredUser.CoApplicantId.Value);
+                    if (coApp != null)
+                    {
+                        tree.Level1.Add(new ReferralUserDto
+                        {
+                            Id = coApp.Id,
+                            HasCoApplicant = false,
+                            IsCoApplicant = true
+                        });
+                    }
+                }
             }
 
-            // Level 2
-            foreach (var level1User in tree.Level1)
+            // ----- LEVEL 2 -----
+            foreach (var level1User in tree.Level1.Where(u => !u.IsCoApplicant))
             {
                 var level2Paths = await _referralPathRepository.GetReferralPathsAsync(level1User.Id);
                 foreach (var path in level2Paths)
                 {
-                    if (!visited.Add(path.User.Id)) continue;
+                    var referredUser = path.User;
+
+                    if (!visited.Add(referredUser.Id)) continue;
 
                     tree.Level2.Add(new ReferralUserDto
                     {
-                        Id = path.User.Id,
-                        HasCoApplicant = path.User.HasCoApplicant
+                        Id = referredUser.Id,
+                        HasCoApplicant = referredUser.HasCoApplicant,
+                        IsCoApplicant = false
                     });
+
+                    if (referredUser.CoApplicantId.HasValue && visited.Add(referredUser.CoApplicantId.Value))
+                    {
+                        var coApp = await _userRepository.GetByIdAsync(referredUser.CoApplicantId.Value);
+                        if (coApp != null)
+                        {
+                            tree.Level2.Add(new ReferralUserDto
+                            {
+                                Id = coApp.Id,
+                                HasCoApplicant = false,
+                                IsCoApplicant = true
+                            });
+                        }
+                    }
                 }
             }
 
-            // Level 3
-            foreach (var level2User in tree.Level2)
+            // ----- LEVEL 3 -----
+            foreach (var level2User in tree.Level2.Where(u => !u.IsCoApplicant))
             {
                 var level3Paths = await _referralPathRepository.GetReferralPathsAsync(level2User.Id);
                 foreach (var path in level3Paths)
                 {
-                    if (!visited.Add(path.User.Id)) continue;
+                    var referredUser = path.User;
+
+                    if (!visited.Add(referredUser.Id)) continue;
 
                     tree.Level3.Add(new ReferralUserDto
                     {
-                        Id = path.User.Id,
-                        HasCoApplicant = path.User.HasCoApplicant
+                        Id = referredUser.Id,
+                        HasCoApplicant = referredUser.HasCoApplicant,
+                        IsCoApplicant = false
                     });
+
+                    if (referredUser.CoApplicantId.HasValue && visited.Add(referredUser.CoApplicantId.Value))
+                    {
+                        var coApp = await _userRepository.GetByIdAsync(referredUser.CoApplicantId.Value);
+                        if (coApp != null)
+                        {
+                            tree.Level3.Add(new ReferralUserDto
+                            {
+                                Id = coApp.Id,
+                                HasCoApplicant = false,
+                                IsCoApplicant = true
+                            });
+                        }
+                    }
                 }
             }
 
             return tree;
         }
+
+
 
 
 
